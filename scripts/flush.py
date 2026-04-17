@@ -140,13 +140,19 @@ respond with exactly: FLUSH_OK
 
 
 COMPILE_AFTER_HOUR = 18  # 6 PM local time
+COMPILE_TIMEZONE = "America/Edmonton"
 
 
 def maybe_trigger_compilation() -> None:
     """If it's past the compile hour and today's log hasn't been compiled, run compile.py."""
     import subprocess as _sp
+    import zoneinfo
 
-    now = datetime.now(timezone.utc).astimezone()
+    try:
+        tz = zoneinfo.ZoneInfo(COMPILE_TIMEZONE)
+    except Exception:
+        tz = timezone.utc
+    now = datetime.now(tz)
     if now.hour < COMPILE_AFTER_HOUR:
         return
 
@@ -228,9 +234,7 @@ def main():
     # Append to daily log
     if "FLUSH_OK" in response:
         logging.info("Result: FLUSH_OK")
-        append_to_daily_log(
-            "FLUSH_OK - Nothing worth saving from this session", "Memory Flush"
-        )
+        # nothing to write — daily log stays clean
     elif "FLUSH_ERROR" in response:
         logging.error("Result: %s", response)
         append_to_daily_log(response, "Memory Flush")
